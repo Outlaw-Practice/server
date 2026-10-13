@@ -207,31 +207,52 @@ async function handleScrollEnd() {
 }
 
 /**
- * Load accounts for the current selection (disabled, recent, or a group).
+ * Fetch the next page of accounts for the current selection (disabled, recent, or a group).
+ *
+ * @return The number of accounts returned by the server
+ */
+async function loadUsersPage(): Promise<number | undefined> {
+	if (props.selectedGroup === 'disabled') {
+		return await store.dispatch('getDisabledUsers', {
+			offset: disabledUsersOffset.value,
+			limit: disabledUsersLimit.value,
+			search: searchQuery.value,
+		})
+	} else if (props.selectedGroup === '__nc_internal_recent') {
+		return await store.dispatch('getRecentUsers', {
+			offset: usersOffset.value,
+			limit: usersLimit.value,
+			search: searchQuery.value,
+		})
+	}
+	return await store.dispatch('getUsers', {
+		offset: usersOffset.value,
+		limit: usersLimit.value,
+		group: props.selectedGroup,
+		search: searchQuery.value,
+	})
+}
+
+/**
+ * Load accounts for the current selection until a full page of them is shown.
+ *
+ * Pages may contain accounts hidden by `filteredUsers` (e.g. disabled ones). More pages
+ * are only requested when the footer becomes visible, which never happens if it stays in view.
  */
 async function loadUsers() {
 	loading.users = true
+	const group = props.selectedGroup
+	const search = searchQuery.value
+	const limit = group === 'disabled' ? disabledUsersLimit.value : usersLimit.value
+	const initialCount = filteredUsers.value.length
 	try {
-		if (props.selectedGroup === 'disabled') {
-			await store.dispatch('getDisabledUsers', {
-				offset: disabledUsersOffset.value,
-				limit: disabledUsersLimit.value,
-				search: searchQuery.value,
-			})
-		} else if (props.selectedGroup === '__nc_internal_recent') {
-			await store.dispatch('getRecentUsers', {
-				offset: usersOffset.value,
-				limit: usersLimit.value,
-				search: searchQuery.value,
-			})
-		} else {
-			await store.dispatch('getUsers', {
-				offset: usersOffset.value,
-				limit: usersLimit.value,
-				group: props.selectedGroup,
-				search: searchQuery.value,
-			})
-		}
+		let loadedCount: number | undefined
+		do {
+			loadedCount = await loadUsersPage()
+		} while (loadedCount === limit
+			&& filteredUsers.value.length - initialCount < limit
+			&& group === props.selectedGroup
+			&& search === searchQuery.value)
 		logger.debug(`${users.value.length} total user(s) loaded`)
 	} catch (error) {
 		logger.error('Failed to load accounts', { error })
