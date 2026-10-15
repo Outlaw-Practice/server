@@ -5,6 +5,7 @@
 
 import type { IToken } from '../store/authtoken.ts'
 
+import { mdiPencilOutline, mdiTrashCanOutline } from '@mdi/js'
 import { createTestingPinia } from '@pinia/testing'
 import { getByRole } from '@testing-library/vue'
 import { enableAutoUnmount, mount } from '@vue/test-utils'
@@ -222,6 +223,25 @@ describe('AuthToken action labels', () => {
 
 		const labels = wrapper.findAll('button').map((button) => button.text())
 		expect(labels).toEqual(expect.arrayContaining(['Rename', 'Revoke', 'Wipe device']))
+	})
+})
+
+describe('AuthToken action icons', () => {
+	it('renders an MDI icon on each action', () => {
+		const wrapper = mountAuthToken(makeToken(), {
+			stubs: {
+				NcActions: { template: '<ul><slot /></ul>' },
+				NcActionButton: false,
+				NcIconSvgWrapper: false,
+			},
+		})
+
+		const icons = Object.fromEntries(wrapper.findAll('button').map((button) => [button.text(), button.find('path').attributes('d')]))
+		expect(icons).toMatchObject({
+			Rename: mdiPencilOutline,
+			Revoke: mdiTrashCanOutline,
+			'Wipe device': mdiTrashCanOutline,
+		})
 	})
 })
 
