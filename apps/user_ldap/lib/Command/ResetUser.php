@@ -49,6 +49,10 @@ class ResetUser extends Command {
 
 	#[\Override]
 	protected function execute(InputInterface $input, OutputInterface $output): int {
+		if (!\OCP\Server::get(\OCP\IConfig::class)->getSystemValueBool('files.trash.delete', true)) {
+			$output->writeln('<error>Account reset is disabled by retention policy.</error>');
+			return self::FAILURE;
+		}
 		try {
 			$uid = $input->getArgument('uid');
 			$user = $this->userManager->get($uid);

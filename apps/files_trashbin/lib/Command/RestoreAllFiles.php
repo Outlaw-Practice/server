@@ -188,7 +188,7 @@ class RestoreAllFiles extends Base {
 			$output->write("File <info>$filename</info> originally deleted at <info>$humanTime</info> restoring to <info>/$location</info>:");
 
 			try {
-				$trashItem->getTrashBackend()->restoreItem($trashItem);
+				$this->trashManager->restoreItem($trashItem);
 			} catch (\Throwable $e) {
 				$output->writeln(' <error>Failed: ' . $e->getMessage() . '</error>');
 				$output->writeln(' <error>' . $e->getTraceAsString() . '</error>', OutputInterface::VERBOSITY_VERY_VERBOSE);

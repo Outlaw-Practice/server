@@ -12,6 +12,9 @@ namespace OCA\Files_Trashbin\Trash;
 use OCP\IUser;
 
 interface ITrashManager extends ITrashBackend {
+	/** Run a complete trash mutation, including dependent history cleanup, exclusively. */
+	public function withMutationLock(callable $operation): mixed;
+
 	/**
 	 * Add a backend for the trashbin
 	 *

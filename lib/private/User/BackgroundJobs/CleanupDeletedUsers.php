@@ -56,7 +56,10 @@ class CleanupDeletedUsers extends TimedJob {
 					$this->userManager,
 					$this->config,
 				);
-				$user->delete();
+				if (!$user->delete()) {
+					$this->logger->info('Skipping deleted user {userId}; account deletion was refused.', ['userId' => $userId]);
+					continue;
+				}
 				$this->logger->info('Cleaned up deleted user {userId}', ['userId' => $userId]);
 			} catch (\Throwable $error) {
 				$this->logger->warning('Could not cleanup deleted user {userId}', ['userId' => $userId, 'exception' => $error]);

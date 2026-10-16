@@ -800,15 +800,21 @@ class Trashbin implements IEventListener {
 		if (Server::get(IAppManager::class)->isEnabledForUser('files_versions')) {
 			if ($view->is_dir('files_trashbin/versions/' . $file)) {
 				$size += self::calculateSize(new View('/' . $user . '/files_trashbin/versions/' . $file));
-				$view->unlink('files_trashbin/versions/' . $file);
+				if (!$view->unlink('files_trashbin/versions/' . $file)) {
+					throw new NotPermittedException('Could not remove retained trash history');
+				}
 			} elseif ($versions = self::getVersionsFromTrash($filename, $timestamp, $user)) {
 				foreach ($versions as $v) {
 					if ($timestamp) {
 						$size += $view->filesize('/files_trashbin/versions/' . static::getTrashFilename($filename . '.v' . $v, $timestamp));
-						$view->unlink('/files_trashbin/versions/' . static::getTrashFilename($filename . '.v' . $v, $timestamp));
+						if (!$view->unlink('/files_trashbin/versions/' . static::getTrashFilename($filename . '.v' . $v, $timestamp))) {
+							throw new NotPermittedException('Could not remove retained trash history');
+						}
 					} else {
 						$size += $view->filesize('/files_trashbin/versions/' . $filename . '.v' . $v);
-						$view->unlink('/files_trashbin/versions/' . $filename . '.v' . $v);
+						if (!$view->unlink('/files_trashbin/versions/' . $filename . '.v' . $v)) {
+							throw new NotPermittedException('Could not remove retained trash history');
+						}
 					}
 				}
 			}
@@ -910,18 +916,20 @@ class Trashbin implements IEventListener {
 	 * Clean up the trash bin
 	 */
 	public static function expire(Folder $trashRoot, IUser $user): void {
-		$trashBinSize = $trashRoot->getSize();
-		$availableSpace = self::calculateFreeSpace($trashRoot->getParent(), $trashBinSize, $user);
+		Server::get(\OCA\Files_Trashbin\Trash\ITrashManager::class)->withMutationLock(static function () use ($trashRoot, $user): void {
+			$trashBinSize = $trashRoot->getSize();
+			$availableSpace = self::calculateFreeSpace($trashRoot->getParent(), $trashBinSize, $user);
 
-		$dirContent = Helper::getTrashFiles('/', $user->getUID(), 'mtime');
+			$dirContent = Helper::getTrashFiles('/', $user->getUID(), 'mtime');
 
-		// delete all files older then $retention_obligation
-		[$delSize, $count] = self::deleteExpiredFiles($dirContent, $user->getUID());
+			// delete all files older then $retention_obligation
+			[$delSize, $count] = self::deleteExpiredFiles($dirContent, $user->getUID());
 
-		$availableSpace += $delSize;
+			$availableSpace += $delSize;
 
-		// delete files from trash until we meet the trash bin size limit again
-		self::deleteFiles(array_slice($dirContent, $count), $user->getUID(), $availableSpace);
+			// delete files from trash until we meet the trash bin size limit again
+			self::deleteFiles(array_slice($dirContent, $count), $user->getUID(), $availableSpace);
+		});
 	}
 
 	/**
