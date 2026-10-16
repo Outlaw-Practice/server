@@ -570,8 +570,9 @@ class UsersController extends AUserDataOCSController {
 				try {
 					$this->editUser($userid, self::USER_FIELD_DISPLAYNAME, $displayName);
 				} catch (OCSException $e) {
-					if ($newUser instanceof IUser) {
-						$newUser->delete();
+					if ($newUser instanceof IUser && !$newUser->delete()) {
+						// Retention may prevent deletion; a failed provision must not leave access enabled.
+						$newUser->setEnabled(false);
 					}
 					throw $e;
 				}

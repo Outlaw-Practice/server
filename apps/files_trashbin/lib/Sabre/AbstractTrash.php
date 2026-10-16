@@ -88,12 +88,20 @@ abstract class AbstractTrash implements ITrash {
 			throw new Forbidden('Not allowed to delete items from the trash bin');
 		}
 
-		$this->trashManager->removeItem($this->data);
+		try {
+			$this->trashManager->removeItem($this->data);
+		} catch (\OCP\Lock\LockedException) {
+			throw new \Sabre\DAV\Exception\Locked();
+		}
 	}
 
 	#[\Override]
 	public function restore(): bool {
-		$this->trashManager->restoreItem($this->data);
+		try {
+			$this->trashManager->restoreItem($this->data);
+		} catch (\OCP\Lock\LockedException) {
+			throw new \Sabre\DAV\Exception\Locked();
+		}
 		return true;
 	}
 }

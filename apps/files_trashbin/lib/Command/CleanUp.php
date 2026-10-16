@@ -57,6 +57,10 @@ class CleanUp extends Base {
 
 	#[\Override]
 	protected function execute(InputInterface $input, OutputInterface $output): int {
+		if (!\OCA\Files_Trashbin\Service\ConfigService::getDeleteFromTrashEnabled()) {
+			$output->writeln('<error>Manual trash deletion is disabled</error>');
+			return self::FAILURE;
+		}
 		$userIds = $input->getArgument('user_id');
 		$verbose = $input->getOption('verbose');
 		if (!empty($userIds) && $input->getOption('all-users')) {

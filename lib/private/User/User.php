@@ -254,6 +254,12 @@ class User implements IUser {
 	 */
 	#[\Override]
 	public function delete(): bool {
+		// Account removal also destroys retained files, versions and trash.
+		// Refuse before any deletion hook; disabling the account remains available.
+		if (!$this->config->getSystemValueBool('files.trash.delete', true)) {
+			Server::get(LoggerInterface::class)->warning('Account deletion is disabled by retention policy; disable the account instead');
+			return false;
+		}
 		if ($this->backend === null) {
 			Server::get(LoggerInterface::class)->error('Cannot delete user: No backend set');
 			return false;

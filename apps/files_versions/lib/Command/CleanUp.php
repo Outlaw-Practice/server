@@ -47,6 +47,10 @@ class CleanUp extends Command {
 
 	#[\Override]
 	protected function execute(InputInterface $input, OutputInterface $output): int {
+		if (!\OCP\Server::get(\OCP\IConfig::class)->getSystemValueBool('enable_version_deletion', true)) {
+			$output->writeln('<error>Version deletion is disabled</error>');
+			return self::FAILURE;
+		}
 		$users = $input->getArgument('user_id');
 
 		$path = $input->getOption('path');

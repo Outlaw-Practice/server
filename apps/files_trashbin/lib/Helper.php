@@ -105,7 +105,7 @@ class Helper {
 			'type' => $type,
 			'directory' => ($dir === '/') ? '' : $dir,
 			'size' => $entry->getSize(),
-			'etag' => '',
+			'etag' => $entry->getEtag(),
 			'permissions' => Constants::PERMISSION_ALL - Constants::PERMISSION_SHARE,
 			'fileid' => $entry->getId(),
 		];

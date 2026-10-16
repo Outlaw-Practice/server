@@ -22,6 +22,7 @@ use OCP\Files\Lock\LockContext;
 use OCP\Files\Node;
 use OCP\Files\Storage\IStorage;
 use OCP\IUser;
+use OCP\IConfig;
 use OCP\Lock\ManuallyLockedException;
 use OCP\Server;
 
@@ -133,6 +134,9 @@ class VersionManager implements IVersionManager, IDeletableVersionBackend, INeed
 
 	#[\Override]
 	public function deleteVersion(IVersion $version): void {
+		if (!Server::get(IConfig::class)->getSystemValueBool('enable_version_deletion', true)) {
+			throw new \Sabre\DAV\Exception\Forbidden('Version deletion is disabled');
+		}
 		$backend = $version->getBackend();
 		if ($backend instanceof IDeletableVersionBackend) {
 			$backend->deleteVersion($version);

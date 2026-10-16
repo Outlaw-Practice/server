@@ -9,12 +9,47 @@ namespace OCA\Files_Trashbin\Trash;
 
 use OCP\Files\Storage\IStorage;
 use OCP\IUser;
+use OCP\Lock\LockedException;
 
 class TrashManager implements ITrashManager {
 	/** @var ITrashBackend[] */
 	private $backends = [];
 
 	private $trashPaused = false;
+	/** @var resource|null Shared by manager instances in this PHP process. */
+	private static $mutationLock = null;
+
+	#[\Override]
+	public function withMutationLock(callable $operation): mixed {
+		// A directory and any descendant must share the same lock, including
+		// Teamfolders accessed through different users. The single-host deployment
+		// shares its local config dataset between PHP and CLI workers. Never unlink
+		// this file: replacing its inode would create a second lock domain.
+		if (self::$mutationLock !== null) {
+			return $operation();
+		}
+		$mask = umask(0077);
+		try {
+			$handle = fopen(\OC::$configDir . '/.retention-mutation.lock', 'c');
+		} finally {
+			umask($mask);
+		}
+		if ($handle === false) {
+			throw new \RuntimeException('Trash mutation lock unavailable');
+		}
+		if (!flock($handle, LOCK_EX | LOCK_NB)) {
+			fclose($handle);
+			throw new LockedException('files_trashbin:mutation');
+		}
+		self::$mutationLock = $handle;
+		try {
+			return $operation();
+		} finally {
+			self::$mutationLock = null;
+			flock($handle, LOCK_UN);
+			fclose($handle);
+		}
+	}
 
 	#[\Override]
 	public function registerBackend(string $storageType, ITrashBackend $backend) {
@@ -70,12 +105,17 @@ class TrashManager implements ITrashManager {
 
 	#[\Override]
 	public function restoreItem(ITrashItem $item) {
-		return $this->getBackendForItem($item)->restoreItem($item);
+		return $this->withMutationLock(function () use ($item) {
+			// A restore/redelete can preserve both cache ID and deletion second.
+			// Change the revision before moving so old purge selections go stale.
+			$item->getStorage()->getCache()->update($item->getId(), ['etag' => bin2hex(random_bytes(16))]);
+			return $this->getBackendForItem($item)->restoreItem($item);
+		});
 	}
 
 	#[\Override]
 	public function removeItem(ITrashItem $item) {
-		$this->getBackendForItem($item)->removeItem($item);
+		$this->withMutationLock(fn () => $this->getBackendForItem($item)->removeItem($item));
 	}
 
 	/**
