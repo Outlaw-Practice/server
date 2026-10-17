@@ -36,6 +36,12 @@ Current retained patch groups (submission pending):
 | nextcloud/server v35.0.2, `ba900af933e61ffa005315b09d6454bfbbcbcc81` | `9aeb9ea57fa9385671463f942b8783357a928340` | Version deletion flag; shared trash mutation lock; restore/expiry serialization; account deletion and provisioning rollback protections; history unlink failure handling. Retention-lock backend/HTTP/UI tests and installed scheduled-job qualification. |
 | nextcloud/groupfolders 23.0.1, `7ac7bafbbed54a3b7e188668787c5394cb25d0be` | `51eba76d226ebc01399c901c0f8cf1d4a9185c51` | Shared expiry mutation lock, manual-cleanup and whole-folder removal protection, guarded commands/controllers. Personal/Teamfolders lifecycle, purge and installed-route tests. |
 
+Deployment customizations (no upstream submission):
+
+| Repository/base | Local patch commit | Behavior and coverage |
+| --- | --- | --- |
+| Outlaw-Practice/server, nextcloud/server v35.0.2 base `ba900af933e61ffa005315b09d6454bfbbcbcc81` | `37448ba0184eb0a7586cd25330f27e05b43a4209` | Version-specific matching-source links in the custom theme footer and About dialog. Two DOM lifecycle tests and installed login/About/mobile/public-share browser qualification. |
+
 Local integration tips and per-build file inventories belong in each build's
 source record. The ledger records patch purpose and origin, not a substitute
 for verifying that a newer upstream release still needs the patch.
