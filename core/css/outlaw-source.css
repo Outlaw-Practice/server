@@ -1,5 +1,6 @@
-#firstrunwizard .modal-container > .outlaw-source-offer {
-    align-self: center;
+#firstrunwizard .outlaw-source-footer {
     flex: 0 0 auto;
-    padding: 8px;
+    padding-block: 8px;
+    text-align: center;
+    font-size: 14px;
 }

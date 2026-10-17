@@ -2,8 +2,8 @@
 (() => {
     const attach = () => {
         const offer = document.getElementById('outlaw-source-offer');
-        const dialog = document.querySelector('#firstrunwizard .modal-container');
-        if (!offer || !dialog || dialog.querySelector('.outlaw-source-offer')) {
+        const content = document.querySelector('#firstrunwizard .modal-container__content > div:has(h2)');
+        if (!offer || !content || content.querySelector('.outlaw-source-offer')) {
             return;
         }
         const link = document.createElement('a');
@@ -11,8 +11,11 @@
         link.href = offer.href;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        link.textContent = 'Source code for this installation';
-        dialog.append(link);
+        link.textContent = 'Source code';
+        const footer = document.createElement('footer');
+        footer.className = 'outlaw-source-footer';
+        footer.append(link);
+        content.append(footer);
     };
     const start = () => {
         new MutationObserver(attach).observe(document.body, { childList: true, subtree: true });
